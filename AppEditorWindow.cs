@@ -35,6 +35,8 @@ public sealed class AppEditorWindow : Window
     private Border? _wheelMarker;
     private Border? _valueMarker;
     private Popup? _colorPickerPopup;
+    private Popup? _presetsPopup;
+    private Popup? _runningAppsPopup;
     private double _pickerHue;
     private double _pickerSaturation;
     private double _pickerValue = 1;
@@ -43,6 +45,42 @@ public sealed class AppEditorWindow : Window
     private bool _updatingColorFromPicker;
 
     private const int PickerSize = 224;
+
+    private static readonly IReadOnlyList<AppPreset> Presets = new List<AppPreset>
+    {
+        new("DEVELOPMENT", "JetBrains Rider", new[] { "rider64", "rider" }, "IDE", "◈", "#FFB84D"),
+        new("DEVELOPMENT", "Visual Studio", new[] { "devenv" }, "IDE", "◇", "#9B7BFF"),
+        new("DEVELOPMENT", "Visual Studio Code", new[] { "code" }, "EDITOR", "⌘", "#36A9E1"),
+        new("DEVELOPMENT", "IntelliJ IDEA", new[] { "idea64", "idea" }, "IDE", "◆", "#FF5C93"),
+        new("DEVELOPMENT", "PyCharm", new[] { "pycharm64", "pycharm" }, "IDE", "◆", "#60D394"),
+        new("DEVELOPMENT", "WebStorm", new[] { "webstorm64", "webstorm" }, "IDE", "◆", "#42C7D9"),
+        new("DEVELOPMENT", "CLion", new[] { "clion64", "clion" }, "IDE", "◆", "#D76BFF"),
+        new("DEVELOPMENT", "Android Studio", new[] { "studio64", "studio" }, "IDE", "△", "#62D98B"),
+        new("DEVELOPMENT", "Unreal Engine", new[] { "unrealeditor", "ue5editor", "ue4editor" }, "ENGINE", "✦", "#8E7DFF"),
+        new("DEVELOPMENT", "Unity", new[] { "unity" }, "ENGINE", "◇", "#B8C0CC"),
+
+        new("CREATIVE", "Blender", new[] { "blender" }, "3D", "◎", "#F58A45"),
+        new("CREATIVE", "Adobe Photoshop", new[] { "photoshop" }, "DESIGN", "□", "#31A8FF"),
+        new("CREATIVE", "Adobe Illustrator", new[] { "illustrator" }, "DESIGN", "◇", "#FF9A00"),
+        new("CREATIVE", "Adobe Premiere Pro", new[] { "adobe premiere pro" }, "VIDEO", "▹", "#9999FF"),
+        new("CREATIVE", "Adobe After Effects", new[] { "afterfx" }, "VIDEO", "✧", "#D291FF"),
+        new("CREATIVE", "DaVinci Resolve", new[] { "resolve" }, "VIDEO", "◉", "#E95D6A"),
+        new("CREATIVE", "Figma", new[] { "figma" }, "DESIGN", "◌", "#A879FF"),
+
+        new("PRODUCTIVITY", "Obsidian", new[] { "obsidian" }, "NOTES", "◇", "#8B5CF6"),
+        new("PRODUCTIVITY", "Notion", new[] { "notion" }, "NOTES", "□", "#D5D8DE"),
+
+        new("COMMUNICATION", "Discord", new[] { "discord" }, "CHAT", "◉", "#5865F2"),
+        new("COMMUNICATION", "Slack", new[] { "slack" }, "CHAT", "✣", "#E7A7D4"),
+        new("COMMUNICATION", "Microsoft Teams", new[] { "ms-teams", "teams" }, "CHAT", "◈", "#7B83EB"),
+
+        new("BROWSER", "Google Chrome", new[] { "chrome" }, "BROWSER", "◉", "#52B788"),
+        new("BROWSER", "Microsoft Edge", new[] { "msedge" }, "BROWSER", "◉", "#35B8C5"),
+        new("BROWSER", "Mozilla Firefox", new[] { "firefox" }, "BROWSER", "◉", "#FF7139"),
+
+        new("PLATFORM", "Steam", new[] { "steam" }, "PLATFORM", "⌁", "#5C7FA3"),
+        new("PLATFORM", "Spotify", new[] { "spotify" }, "MUSIC", "♪", "#1DB954"),
+    };
 
     public TrackerApp? Result { get; private set; }
 
@@ -93,7 +131,7 @@ public sealed class AppEditorWindow : Window
         root.Children.Add(lead);
 
         AddField(root, Localization.T("Editor.FieldName"), _name, 3, Localization.T("Editor.ExampleName"));
-        AddField(root, Localization.T("Editor.FieldProcesses"), _processes, 4, Localization.T("Editor.ExampleProcess"));
+        AddField(root, Localization.T("Editor.FieldProcesses"), BuildProcessesRow(), 4, string.Empty);
         AddField(root, Localization.T("Editor.FieldTypeIcon"), BuildTypeIconRow(), 5, string.Empty);
         AddField(root, Localization.T("Editor.FieldDescription"), _description, 6, Localization.T("Default.CustomDescription"));
         AddField(root, Localization.T("Editor.FieldColor"), BuildColorRow(), 7, string.Empty);
@@ -145,6 +183,435 @@ public sealed class AppEditorWindow : Window
         row.Children.Add(_icon);
         return row;
     }
+
+    private Grid BuildProcessesRow()
+    {
+        StyleTextBox(_processes, Localization.T("Editor.ExampleProcess"));
+
+        var row = new Grid();
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        _processes.Margin = new Thickness(0, 0, 8, 0);
+        row.Children.Add(_processes);
+
+        var runningAppsButton = new Button
+        {
+            Content = Localization.T("Editor.RunningApps"),
+            ToolTip = Localization.T("Editor.RunningAppsHint"),
+            Foreground = BrushFor("#DCE2EC"),
+            Background = BrushFor("#252B38"),
+            BorderBrush = BrushFor("#353B48"),
+            Padding = new Thickness(12, 8, 12, 8),
+            Margin = new Thickness(0, 0, 8, 0),
+        };
+        runningAppsButton.Click += async (_, _) => await ShowRunningAppsAsync(runningAppsButton);
+        Grid.SetColumn(runningAppsButton, 1);
+        row.Children.Add(runningAppsButton);
+
+        var presetsButton = new Button
+        {
+            Content = Localization.T("Editor.PopularApps"),
+            ToolTip = Localization.T("Editor.PopularAppsHint"),
+            Foreground = BrushFor("#DCE2EC"),
+            Background = BrushFor("#252B38"),
+            BorderBrush = BrushFor("#353B48"),
+            Padding = new Thickness(12, 8, 12, 8),
+        };
+        _presetsPopup = BuildPresetsPopup(presetsButton);
+        presetsButton.Click += (_, _) =>
+        {
+            if (_presetsPopup is null) return;
+            if (_runningAppsPopup is not null) _runningAppsPopup.IsOpen = false;
+            _presetsPopup.IsOpen = !_presetsPopup.IsOpen;
+        };
+        Grid.SetColumn(presetsButton, 2);
+        row.Children.Add(presetsButton);
+        return row;
+    }
+
+    private Popup BuildPresetsPopup(Button placementTarget)
+    {
+        var popup = BuildAppListPopup(placementTarget, out var items);
+
+        string? previousGroup = null;
+        foreach (var preset in Presets)
+        {
+            if (!string.Equals(previousGroup, preset.Group, StringComparison.Ordinal))
+            {
+                items.Children.Add(BuildPopupGroupHeading(
+                    LocalizePresetGroup(preset.Group),
+                    previousGroup is null));
+                previousGroup = preset.Group;
+            }
+
+            var executableLabel = string.Join(", ", preset.ProcessNames.Select(name => name + ".exe"));
+            var row = BuildPopupRow(
+                BuildMenuRowHeader(
+                    BuildTextBadge(preset.Icon, preset.Color),
+                    $"{preset.Name}   \u00B7   {executableLabel}"));
+            row.MouseLeftButtonUp += (_, e) =>
+            {
+                ApplyPreset(preset);
+                popup.IsOpen = false;
+                e.Handled = true;
+            };
+            items.Children.Add(row);
+        }
+
+        return popup;
+    }
+
+    private void ApplyPreset(AppPreset preset)
+    {
+        _name.Text = preset.Name;
+        _processes.Text = string.Join(", ", preset.ProcessNames.Select(name => name + ".exe"));
+        _type.Text = preset.Type;
+        _icon.Text = preset.Icon;
+        _description.Text = Localization.Language == Localization.Korean
+            ? $"{preset.Name} 사용 시간"
+            : $"{preset.Name} playtime";
+        _color.Text = preset.Color;
+    }
+
+    private async Task ShowRunningAppsAsync(Button placementTarget)
+    {
+        var originalContent = placementTarget.Content;
+        placementTarget.IsEnabled = false;
+        placementTarget.Content = Localization.T("Editor.ScanningApps");
+        IReadOnlyList<RunningAppChoice> choices;
+
+        try
+        {
+            try
+            {
+                choices = await Task.Run(GetRunningAppChoices);
+            }
+            catch
+            {
+                choices = Array.Empty<RunningAppChoice>();
+            }
+        }
+        finally
+        {
+            placementTarget.Content = originalContent;
+            placementTarget.IsEnabled = true;
+        }
+
+        if (_presetsPopup is not null) _presetsPopup.IsOpen = false;
+        if (_runningAppsPopup is not null) _runningAppsPopup.IsOpen = false;
+        _runningAppsPopup = BuildRunningAppsPopup(placementTarget, choices);
+        _runningAppsPopup.IsOpen = true;
+    }
+
+    private Popup BuildRunningAppsPopup(Button placementTarget, IReadOnlyList<RunningAppChoice> choices)
+    {
+        var popup = BuildAppListPopup(placementTarget, out var items);
+        items.Children.Add(BuildPopupGroupHeading(Localization.T("Editor.RunningAppsGroup"), true));
+
+        if (choices.Count == 0)
+        {
+            items.Children.Add(new TextBlock
+            {
+                Text = Localization.T("Editor.NoRunningApps"),
+                Foreground = BrushFor("#8D94A4"),
+                Background = Brushes.Transparent,
+                Margin = new Thickness(12, 7, 12, 12),
+                FontSize = 11,
+            });
+            return popup;
+        }
+
+        foreach (var choice in choices)
+        {
+            var row = BuildPopupRow(
+                BuildMenuRowHeader(
+                    BuildRunningAppIcon(choice),
+                    $"{choice.DisplayName}   \u00B7   {choice.ProcessName}.exe"),
+                BuildRunningAppToolTip(choice));
+            row.MouseLeftButtonUp += (_, e) =>
+            {
+                ApplyRunningApp(choice);
+                popup.IsOpen = false;
+                e.Handled = true;
+            };
+            items.Children.Add(row);
+        }
+
+        return popup;
+    }
+
+    private void ApplyRunningApp(RunningAppChoice choice)
+    {
+        _name.Text = choice.DisplayName;
+        _processes.Text = choice.ProcessName + ".exe";
+        _type.Text = "PROGRAM";
+        _icon.Text = FirstGlyph(choice.DisplayName);
+        _description.Text = Localization.Language == Localization.Korean
+            ? $"{choice.DisplayName} 사용 시간"
+            : $"{choice.DisplayName} playtime";
+        _color.Text = "#29D3A2";
+    }
+
+    private static Popup BuildAppListPopup(Button placementTarget, out StackPanel items)
+    {
+        items = new StackPanel
+        {
+            Background = BrushFor("#151925"),
+        };
+
+        var scrollViewer = new ScrollViewer
+        {
+            Content = items,
+            Background = BrushFor("#151925"),
+            BorderThickness = new Thickness(0),
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            MinWidth = 360,
+            MaxWidth = 620,
+            MaxHeight = 500,
+            PanningMode = PanningMode.VerticalOnly,
+        };
+
+        var surface = new Border
+        {
+            Background = BrushFor("#151925"),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(4),
+            SnapsToDevicePixels = true,
+            Child = scrollViewer,
+            Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                Color = Color.FromRgb(0, 0, 0),
+                BlurRadius = 14,
+                ShadowDepth = 4,
+                Opacity = 0.45,
+            },
+        };
+
+        return new Popup
+        {
+            PlacementTarget = placementTarget,
+            Placement = PlacementMode.Bottom,
+            VerticalOffset = 4,
+            StaysOpen = false,
+            AllowsTransparency = true,
+            PopupAnimation = PopupAnimation.Fade,
+            Child = surface,
+        };
+    }
+
+    private static TextBlock BuildPopupGroupHeading(string text, bool isFirst)
+    {
+        return new TextBlock
+        {
+            Text = text,
+            Foreground = BrushFor("#747D8D"),
+            Background = Brushes.Transparent,
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 10,
+            FontWeight = FontWeights.Bold,
+            Margin = new Thickness(12, isFirst ? 8 : 16, 12, 5),
+        };
+    }
+
+    private static Border BuildPopupRow(UIElement content, string? toolTip = null)
+    {
+        var row = new Border
+        {
+            Background = BrushFor("#151925"),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(12, 7, 12, 7),
+            Child = content,
+            ToolTip = toolTip,
+            Cursor = System.Windows.Input.Cursors.Hand,
+        };
+        row.MouseEnter += (_, _) => row.Background = BrushFor("#203B3A");
+        row.MouseLeave += (_, _) => row.Background = BrushFor("#151925");
+        return row;
+    }
+
+    private static IReadOnlyList<RunningAppChoice> GetRunningAppChoices()
+    {
+        var choices = new Dictionary<string, RunningAppChoice>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var process in System.Diagnostics.Process.GetProcesses())
+        {
+            try
+            {
+                if (process.MainWindowHandle == IntPtr.Zero) continue;
+
+                var windowTitle = process.MainWindowTitle?.Trim();
+                if (string.IsNullOrWhiteSpace(windowTitle)) continue;
+
+                var processName = process.ProcessName.Trim();
+                if (string.IsNullOrWhiteSpace(processName)
+                    || IgnoredRunningProcessNames.Contains(processName)
+                    || processName.Equals("DevPlaytime", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string? executablePath = null;
+                try { executablePath = process.MainModule?.FileName; }
+                catch { }
+
+                var displayName = GetExecutableDisplayName(executablePath, processName);
+                var choice = new RunningAppChoice(
+                    displayName,
+                    processName,
+                    executablePath,
+                    windowTitle,
+                    TryExtractExecutableIcon(executablePath));
+
+                if (!choices.TryGetValue(processName, out var existing)
+                    || (existing.Icon is null && choice.Icon is not null))
+                {
+                    choices[processName] = choice;
+                }
+            }
+            catch
+            {
+                // Some system or elevated processes do not expose all properties.
+            }
+            finally
+            {
+                process.Dispose();
+            }
+        }
+
+        return choices.Values
+            .OrderBy(choice => choice.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+
+    private static string GetExecutableDisplayName(string? executablePath, string processName)
+    {
+        if (!string.IsNullOrWhiteSpace(executablePath))
+        {
+            try
+            {
+                var versionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(executablePath);
+                var productName = versionInfo.ProductName?.Trim();
+                if (!string.IsNullOrWhiteSpace(productName)) return productName;
+
+                var description = versionInfo.FileDescription?.Trim();
+                if (!string.IsNullOrWhiteSpace(description)) return description;
+            }
+            catch { }
+        }
+
+        return processName;
+    }
+
+    private static ImageSource? TryExtractExecutableIcon(string? executablePath)
+    {
+        if (string.IsNullOrWhiteSpace(executablePath) || !System.IO.File.Exists(executablePath)) return null;
+
+        try
+        {
+            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(executablePath);
+            if (icon is null) return null;
+
+            var source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
+                icon.Handle,
+                Int32Rect.Empty,
+                BitmapSizeOptions.FromWidthAndHeight(24, 24));
+            source.Freeze();
+            return source;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string BuildRunningAppToolTip(RunningAppChoice choice)
+    {
+        return string.IsNullOrWhiteSpace(choice.ExecutablePath)
+            ? choice.WindowTitle
+            : $"{choice.WindowTitle}\n{choice.ExecutablePath}";
+    }
+
+    private static Border BuildTextBadge(string text, string color)
+    {
+        return new Border
+        {
+            Width = 22,
+            Height = 22,
+            CornerRadius = new CornerRadius(5),
+            Background = BrushFor(color),
+            Child = new TextBlock
+            {
+                Text = text,
+                Foreground = BrushFor("#F8FBFF"),
+                FontSize = 11,
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
+    }
+
+    private static UIElement BuildRunningAppIcon(RunningAppChoice choice)
+    {
+        return choice.Icon is null
+            ? BuildTextBadge(FirstGlyph(choice.DisplayName), "#29D3A2")
+            : new Image
+            {
+                Source = choice.Icon,
+                Width = 18,
+                Height = 18,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+    }
+
+    private static StackPanel BuildMenuRowHeader(UIElement icon, string label)
+    {
+        var iconHost = new Grid
+        {
+            Width = 24,
+            Height = 24,
+            Margin = new Thickness(0, 0, 10, 0),
+        };
+        iconHost.Children.Add(icon);
+
+        var row = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        row.Children.Add(iconHost);
+        row.Children.Add(new TextBlock
+        {
+            Text = label,
+            Foreground = BrushFor("#DCE2EC"),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        return row;
+    }
+
+    private static string FirstGlyph(string value)
+    {
+        var trimmed = value.Trim();
+        return string.IsNullOrEmpty(trimmed) ? "◉" : trimmed[..1].ToUpperInvariant();
+    }
+
+    private static string LocalizePresetGroup(string group) => (Localization.Language, group) switch
+    {
+        (Localization.Korean, "DEVELOPMENT") => "개발",
+        (Localization.Korean, "CREATIVE") => "디자인 · 창작",
+        (Localization.Korean, "PRODUCTIVITY") => "생산성",
+        (Localization.Korean, "COMMUNICATION") => "커뮤니케이션",
+        (Localization.Korean, "BROWSER") => "브라우저",
+        (Localization.Korean, "PLATFORM") => "플랫폼",
+        _ => group,
+    };
 
     private Grid BuildColorRow()
     {
@@ -611,4 +1078,31 @@ public sealed class AppEditorWindow : Window
         try { return (SolidColorBrush)new BrushConverter().ConvertFromString(hex)!; }
         catch { return new SolidColorBrush(Color.FromRgb(86, 224, 176)); }
     }
+
+    private static readonly HashSet<string> IgnoredRunningProcessNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "applicationframehost",
+        "dwm",
+        "explorer",
+        "lockapp",
+        "searchhost",
+        "shellexperiencehost",
+        "startmenuexperiencehost",
+        "textinputhost",
+    };
+
+    private sealed record RunningAppChoice(
+        string DisplayName,
+        string ProcessName,
+        string? ExecutablePath,
+        string WindowTitle,
+        ImageSource? Icon);
+
+    private sealed record AppPreset(
+        string Group,
+        string Name,
+        IReadOnlyList<string> ProcessNames,
+        string Type,
+        string Icon,
+        string Color);
 }
