@@ -55,7 +55,7 @@ public static class Localization
         ["Static.LocalTracker"] = new("로컬 추적기", "LOCAL TRACKER"),
         ["Static.Workspace"] = new("작업 공간", "WORKSPACE"),
         ["Static.LocalWorkspace"] = new("로컬 작업 공간", "LOCAL WORKSPACE"),
-        ["Static.LocalOnly"] = new("로컬 전용  ·  v0.5.0", "LOCAL ONLY  ·  v0.5.0"),
+        ["Static.LocalOnly"] = new("로컬 전용  ·  v0.5.1", "LOCAL ONLY  ·  v0.5.1"),
         ["Static.AddProgram"] = new("＋ 프로그램 추가", "＋ Add program"),
         ["Static.Privacy"] = new(
             "DevPlaytime은 작업을 감시하지 않습니다. 단지 켜져 있던 시간을 조용히 기억합니다.",

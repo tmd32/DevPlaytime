@@ -1,5 +1,9 @@
 # DevPlaytime
 
+<p align="center">
+  <img src="docs/images/DevPlaytime-github-banner.png" alt="DevPlaytime" />
+</p>
+
 DevPlaytime is a local Windows desktop app that records how long development tools and individual projects stay open.
 
 DevPlaytime은 개발 프로그램과 개별 프로젝트가 켜져 있던 시간을 로컬에 기록하는 Windows 데스크톱 앱입니다.
