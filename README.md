@@ -70,6 +70,35 @@ Edit a tracker in Settings and connect a `.sln`, `.slnx`, or `.uproject` file. D
 
 설정에서 추적 항목을 편집하고 `.sln`, `.slnx`, `.uproject` 파일을 연결하면 해당 프로젝트 경로가 프로세스 명령줄에서 확인될 때만 시간을 기록합니다. 프로젝트 파일을 비워두면 프로그램 전체 시간을 기록합니다.
 
+## Adding a tracker / 추적 항목 등록
+
+The following fields appear when you select `Add program` / `프로그램 추가`.
+
+`Add program` / `프로그램 추가`를 선택하면 다음 항목을 입력할 수 있습니다.
+
+| Field / 항목 | What to enter / 입력 내용 | Example / 예시 |
+| --- | --- | --- |
+| Program name / 프로그램 이름 | Required. The name displayed in the library. / 필수. 라이브러리에 표시할 이름입니다. | `Blender`, `Rider`, `My Game` |
+| Executable names / 실행 파일 이름 | Required. Enter the process executable name. Separate multiple names with commas. / 필수. 감지할 프로세스의 실행 파일 이름을 입력합니다. 여러 이름은 쉼표로 구분합니다. | `blender.exe`, `rider64.exe, rider.exe` |
+| Category / icon / 분류·아이콘 | Display-only category and icon. These do not affect tracking. / 화면에 표시할 분류와 아이콘이며 추적 방식에는 영향을 주지 않습니다. | `IDE`, `ENGINE`, `PROGRAM` |
+| Short description / 한 줄 설명 | A short description displayed on the library card. / 라이브러리 카드에 표시할 짧은 설명입니다. | `3D modeling time` |
+| Accent color / 포인트 컬러 | The representative color used by the program card. / 프로그램 카드에 사용할 대표 색상입니다. | `#29D3A2` |
+| Project file / 프로젝트 파일 | Optional. Select an exact `.sln`, `.slnx`, or `.uproject` to track only that project. Leave it empty to track the entire program. / 선택 사항. 특정 프로젝트만 기록하려면 정확한 `.sln`, `.slnx`, `.uproject` 파일을 선택합니다. 프로그램 전체를 기록하려면 비워둡니다. | `C:\Projects\SampleProject\SampleProject.uproject` |
+
+### Quick examples / 빠른 예시
+
+To track an entire app such as Blender, enter a program name and `blender.exe`, then leave the project file empty.
+
+Blender 같은 일반 앱 전체를 추적하려면 프로그램 이름과 `blender.exe`를 입력하고 프로젝트 파일은 비워두세요.
+
+To track Rider only while a specific Unreal Engine project is open, enter `rider64.exe, rider.exe` and connect that project's `.uproject` file.
+
+특정 Unreal Engine 프로젝트를 Rider로 열어둔 시간만 추적하려면 `rider64.exe, rider.exe`를 입력하고 해당 프로젝트의 `.uproject` 파일을 연결하세요.
+
+You can find an executable name in the Windows Task Manager `Details` tab or in the application's installation folder.
+
+실행 파일 이름은 Windows 작업 관리자의 `세부 정보` 탭이나 프로그램 설치 폴더에서 확인할 수 있습니다.
+
 ## Language / 언어
 
 Open Settings and select `한국어` or `English`. The selection is applied immediately to the main window, editor dialogs, messages, timeline formats, and tray menu, then saved for the next launch.
