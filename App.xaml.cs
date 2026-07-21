@@ -62,7 +62,7 @@ public partial class App : System.Windows.Application
         }
         catch
         {
-            // Use the operating-system UI language when saved settings cannot be read.
+            // Use the Windows display language when saved settings cannot be read.
         }
 
         return Localization.NormalizeLanguage(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);

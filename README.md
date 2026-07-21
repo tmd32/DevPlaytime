@@ -101,9 +101,9 @@ You can find an executable name in the Windows Task Manager `Details` tab or in 
 
 ## Language / 언어
 
-Open Settings and select `한국어` or `English`. The selection is applied immediately to the main window, editor dialogs, messages, timeline formats, and tray menu, then saved for the next launch.
+New installations start with an empty library and automatically use the Windows display language. Korean Windows installations start in Korean; other display languages use English. Open Settings and select `한국어` or `English` to override it. The selection is applied immediately and saved for the next launch.
 
-설정에서 `한국어` 또는 `English`를 선택하면 메인 화면, 편집창, 메시지, 시간 형식, 트레이 메뉴에 즉시 적용되며 다음 실행에도 유지됩니다.
+새로 설치하면 빈 라이브러리로 시작하며 Windows 표시 언어를 자동으로 사용합니다. Windows 표시 언어가 한국어면 한국어로, 그 외 언어면 영어로 시작합니다. 설정에서 `한국어` 또는 `English`를 선택하면 즉시 적용되며 다음 실행에도 유지됩니다.
 
 ## Data and privacy / 데이터와 개인정보
 

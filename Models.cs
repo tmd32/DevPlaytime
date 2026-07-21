@@ -5,7 +5,7 @@ namespace DevPlaytimeDesktop;
 public sealed class AppStore
 {
     public int Version { get; set; } = 4;
-    public string Language { get; set; } = Localization.Korean;
+    public string Language { get; set; } = Localization.Language;
     public List<TrackerApp> Apps { get; set; } = new();
     public List<SessionRecord> Sessions { get; set; } = new();
     public DateTimeOffset? LastHeartbeatAt { get; set; }
@@ -13,31 +13,7 @@ public sealed class AppStore
     public static AppStore CreateDefault() => new()
     {
         Language = Localization.Language,
-        Apps = new List<TrackerApp>
-        {
-            new()
-            {
-                Id = "rider",
-                Name = "Rider",
-                Type = "IDE",
-                Icon = "◈",
-                Color = "#FFB84D",
-                Description = Localization.T("Default.RiderDescription"),
-                ProcessNames = new List<string> { "rider64", "rider" },
-                Favorite = true,
-            },
-            new()
-            {
-                Id = "unreal",
-                Name = "Unreal Engine",
-                Type = "ENGINE",
-                Icon = "✦",
-                Color = "#8E7DFF",
-                Description = Localization.T("Default.UnrealDescription"),
-                ProcessNames = new List<string> { "unrealeditor", "ue5editor", "ue4editor" },
-                Favorite = true,
-            },
-        },
+        Apps = new List<TrackerApp>(),
     };
 }
 

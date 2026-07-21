@@ -63,7 +63,7 @@
                             <TextBlock x:Name="AutoTrackingDescription" Text="Work sessions are recorded&#x0a;as soon as a program starts." Foreground="{StaticResource MutedBrush}" FontSize="11" LineHeight="18" Margin="0,9,0,0" />
                         </StackPanel>
                     </Border>
-                    <TextBlock x:Name="VersionText" Text="LOCAL ONLY  ·  v0.4" Foreground="#454B58" FontSize="10" FontFamily="Consolas" Margin="10,0,0,0" />
+                    <TextBlock x:Name="VersionText" Text="LOCAL ONLY  ·  v0.4.1" Foreground="#454B58" FontSize="10" FontFamily="Consolas" Margin="10,0,0,0" />
                 </StackPanel>
 
                 <StackPanel>
